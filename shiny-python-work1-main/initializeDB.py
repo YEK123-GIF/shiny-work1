@@ -1,6 +1,8 @@
 import pandas as pd
 from sqlalchemy import create_engine
 
+"""用于初始化数据库"""
+
 history_df = pd.DataFrame(
         columns=[
             "评审时间", "评审人", "候选人",
@@ -61,4 +63,4 @@ students_df.to_sql(name="students", con=engine, if_exists='replace', index=False
 judger_df.to_sql(name="judger", con=engine, if_exists='replace', index=False)
 DIMENSIONS_df.to_sql(name="dimensions", con=engine, if_exists='replace', index=False)
 root_df.to_sql(name="root", con=engine, if_exists='replace', index=False)
-grades_df.to_sql(name="grades", con=engine, if_exists='replace', index=False)
+

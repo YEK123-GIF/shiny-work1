@@ -1,6 +1,6 @@
 from shiny import App, reactive, render, ui
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from root_ui import *
 from judger_ui import *
 from login_ui import *
@@ -34,6 +34,10 @@ def server(input, output, session):
     @render.text
     def login_msg():
         return login_msg_text()
+    
+    
+    def get_dims_store():
+        return dims_store()
 
     @reactive.Effect
     @reactive.event(input.login_btn)
@@ -119,7 +123,7 @@ def server(input, output, session):
                     DELETE FROM history
                     WHERE 候选人 = :student_name
                       AND 评审人 = :judger_name
-                """),
+                        """),
                     {"student_name": student_name, "judger_name": judger_name}
                 )
 
@@ -176,7 +180,7 @@ def server(input, output, session):
         if role == "root":
             return root_ui
         else:
-            return judger_ui
+            return judger_ui()
 
     @output
     @render.text
@@ -365,6 +369,11 @@ def server(input, output, session):
         DIMENSIONS.columns = list(range(DIMENSIONS.shape[1]))
         DIMENSIONS.to_sql(name="dimensions", con=engine, if_exists='replace', index=False)
         dims_store.set(DIMENSIONS.copy())
+
+        with engine.connect() as conn:
+            conn.execute(text(f"ALTER TABLE history ADD COLUMN `{name}` VARCHAR(255) DEFAULT '0'"))
+            conn.commit()
+
         ui.notification_show(f"已添加评分维度：{name}", type="message")
 
         # 清空输入框
@@ -389,6 +398,10 @@ def server(input, output, session):
         DIMENSIONS.columns = list(range(DIMENSIONS.shape[1]))
         DIMENSIONS.to_sql(name="dimensions", con=engine, if_exists='replace', index=False)
         dims_store.set(DIMENSIONS.copy())
+
+        with engine.connect() as conn:
+            conn.execute(text(f"ALTER TABLE history DROP COLUMN `{name}`"))
+            conn.commit()
 
         ui.notification_show(f"已删除评分维度：{name}", type="message")
 
