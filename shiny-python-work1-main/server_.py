@@ -6,6 +6,10 @@ from judger_ui import *
 from login_ui import *
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib
+
+matplotlib.rcParams["font.sans-serif"] = ["SimHei", "Microsoft YaHei", "SimSun"]
+matplotlib.rcParams["axes.unicode_minus"] = False
 
 engine = create_engine('mysql+pymysql://root:Lzc3219870@localhost:3306/work1?charset=utf8')
 
@@ -205,6 +209,14 @@ def server(input, output, session):
     def score_table():
         df = pd.read_sql(f"SELECT 候选人, 专业基础知识, 逻辑思维能力, 科研潜力, 沟通与表达能力, 综合素质, 总分 FROM history WHERE 评审人='{current_user()}'", engine)
         return df
+    
+    @output
+    @render.data_frame
+    def score_table_for_root():
+        student = input.plot_student()
+        df = pd.read_sql(f"SELECT 评审人, 候选人, 专业基础知识, 逻辑思维能力, 科研潜力, 沟通与表达能力, 综合素质, 总分 FROM history WHERE 候选人='{student}'", engine)
+        return df
+    
 
     @output
     @render.image
@@ -215,6 +227,15 @@ def server(input, output, session):
     def download_csv():
         # 读取数据库里的评分记录
         df = pd.read_sql(f"SELECT 候选人, 专业基础知识, 逻辑思维能力, 科研潜力, 沟通与表达能力, 综合素质, 总分 FROM history WHERE 评审人='{current_user()}'", engine)
+
+        # 返回文本（str），Shiny 会作为文件内容
+        csv_data = df.to_csv(index=False, encoding="utf-8-sig")
+        yield csv_data
+    
+    @render.download(filename="scores.csv")
+    def download_csv_root():
+        student = input.plot_student()
+        df = pd.read_sql(f"SELECT 评审人, 候选人, 专业基础知识, 逻辑思维能力, 科研潜力, 沟通与表达能力, 综合素质, 总分 FROM history WHERE 候选人='{student}'", engine)
 
         # 返回文本（str），Shiny 会作为文件内容
         csv_data = df.to_csv(index=False, encoding="utf-8-sig")
@@ -460,16 +481,18 @@ def server(input, output, session):
             ax.text(0.5, 0.5, "该学生暂无评分数据", ha="center", va="center")
             ax.axis("off")
             return fig
-
-        # 计算中位数（该学生所有评委的总分中位数）
-        median_score = df["总分"].median()
-
-        # 计算差值：每个评委总分 - 中位数
-        df["差值"] = df["总分"] - median_score
-
-        # 按差值排序
-        df_sorted = df.sort_values("差值")
-        diffs = df_sorted["差值"].values
+        
+        df["总分"] = pd.to_numeric(df["总分"], errors="coerce")
+        # 如果存在非法值被转成 NaN，可以顺手丢掉
+        df = df.dropna(subset=["总分"])
+        if df.empty:
+            fig, ax = plt.subplots()
+            ax.text(0.5, 0.5, "总分列无法转换为数值", ha="center", va="center")
+            ax.axis("off")
+            return fig
+        
+        df_sorted = df.sort_values("总分")
+        diffs = df_sorted["总分"].values
         judges = df_sorted["评审人"].tolist()
 
         # x 轴用排序后的序号（1,2,3,...）
@@ -482,11 +505,10 @@ def server(input, output, session):
         for xi, yi, name in zip(x, diffs, judges):
             ax.text(xi, yi, name, fontsize=8, ha="center", va="bottom")
 
-        ax.axhline(0, color="gray", linestyle="--", linewidth=1)  # 中位数基准线
 
-        ax.set_xlabel("评委（按差值从小到大排序）")
-        ax.set_ylabel("总分 - 中位数")
-        ax.set_title(f"{student}：各评委相对中位数的得分差值")
+        ax.set_xlabel("评委")
+        ax.set_ylabel("总分")
+        ax.set_title(f"{student}：各评委总分的分布")
 
         ax.set_xticks(x)
         ax.set_xticklabels(range(1, len(diffs) + 1))
@@ -537,10 +559,10 @@ from io import BytesIO
 def make_score_diff_figure(student: str):
     # 与上面 score_diff_plot 中的逻辑一致，只是返回 fig
     df = pd.read_sql(
-        "SELECT 候选人, 评审人, 总分 FROM history WHERE 候选人 = %s",
-        engine,
-        params=[student]
-    )
+            "SELECT 候选人, 评审人, 总分 FROM history WHERE 候选人 = %s",
+            con=engine,
+            params=(student,)   # 注意这里是元组，不是 [student]
+        )
 
     fig, ax = plt.subplots(figsize=(6, 4))
 
@@ -548,11 +570,17 @@ def make_score_diff_figure(student: str):
         ax.text(0.5, 0.5, "该学生暂无评分数据", ha="center", va="center")
         ax.axis("off")
         return fig
+    df["总分"] = pd.to_numeric(df["总分"], errors="coerce")
+    # 如果存在非法值被转成 NaN，可以顺手丢掉
+    df = df.dropna(subset=["总分"])
+    if df.empty:
+        fig, ax = plt.subplots()
+        ax.text(0.5, 0.5, "总分列无法转换为数值", ha="center", va="center")
+        ax.axis("off")
+        return fig
 
-    median_score = df["总分"].median()
-    df["差值"] = df["总分"] - median_score
-    df_sorted = df.sort_values("差值")
-    diffs = df_sorted["差值"].values
+    df_sorted = df.sort_values("总分")
+    diffs = df_sorted["总分"].values
     judges = df_sorted["评审人"].tolist()
 
     x = np.arange(1, len(diffs) + 1)
@@ -561,10 +589,9 @@ def make_score_diff_figure(student: str):
     for xi, yi, name in zip(x, diffs, judges):
         ax.text(xi, yi, name, fontsize=8, ha="center", va="bottom")
 
-    ax.axhline(0, color="gray", linestyle="--", linewidth=1)
-    ax.set_xlabel("评委（按差值从小到大排序）")
-    ax.set_ylabel("总分 - 中位数")
-    ax.set_title(f"{student}：各评委相对中位数的得分差值")
+    ax.set_xlabel("评委")
+    ax.set_ylabel("总分 ")
+    ax.set_title(f"{student}：各评委总分的分布")
     ax.set_xticks(x)
     ax.set_xticklabels(range(1, len(diffs) + 1))
 

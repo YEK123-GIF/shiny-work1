@@ -3,17 +3,12 @@ from shiny import App, reactive, render, ui
 def show_ui():
     return ui.layout_columns(
         ui.card(
-            ui.card_header("📊 学生评分偏差分布（按中位数）"),
+            ui.card_header("评分分布"),
 
             ui.input_select(
                 "plot_student",
                 "选择学生",
-                choices=[],   # 先留空，后面用 server 动态填充
-            ),
-
-            ui.tags.p(
-                "对于所选学生，展示各评委总分相对于该生评委总分中位数的差值（排序后散点展示）。",
-                class_="text-muted"
+                choices=[],   
             ),
 
             ui.output_plot("score_diff_plot", height="400px"),
@@ -22,9 +17,21 @@ def show_ui():
                     "download_pdf",
                     "下载",
                     class_="btn btn-sm btn-outline-primary"
-            ),
+            )
             
-        )
+        ),
+
+        ui.card(
+            ui.card_header("评分表"),
+            ui.tags.hr(),
+            ui.output_data_frame("score_table_for_root"),  
+            ui.tags.hr(),
+            ui.download_button(
+                "download_csv_root",
+                "下载",
+             class_="btn btn-sm btn-outline-primary"
+                )
+            )  
     )
 
 def manage_ui():
