@@ -491,8 +491,11 @@ def server(input, output, session):
             ax.axis("off")
             return fig
         
-        df_sorted = df.sort_values("总分")
-        diffs = df_sorted["总分"].values
+        median_score = df["总分"].median()
+        df["差值"] = df["总分"] - median_score
+        df_sorted = df.sort_values("差值")
+         
+        diffs = df_sorted["差值"].values
         judges = df_sorted["评审人"].tolist()
 
         # x 轴用排序后的序号（1,2,3,...）
@@ -507,8 +510,8 @@ def server(input, output, session):
 
 
         ax.set_xlabel("评委")
-        ax.set_ylabel("总分")
-        ax.set_title(f"{student}：各评委总分的分布")
+        ax.set_ylabel("差值")
+        ax.set_title(f"{student}：各评委分值与中位数差值的分布")
 
         ax.set_xticks(x)
         ax.set_xticklabels(range(1, len(diffs) + 1))
@@ -578,9 +581,12 @@ def make_score_diff_figure(student: str):
         ax.text(0.5, 0.5, "总分列无法转换为数值", ha="center", va="center")
         ax.axis("off")
         return fig
+    
+    median_score = df["总分"].median()
+    df["差值"] = df["总分"] - median_score
+    df_sorted = df.sort_values("差值")
 
-    df_sorted = df.sort_values("总分")
-    diffs = df_sorted["总分"].values
+    diffs = df_sorted["差值"].values
     judges = df_sorted["评审人"].tolist()
 
     x = np.arange(1, len(diffs) + 1)
@@ -590,8 +596,8 @@ def make_score_diff_figure(student: str):
         ax.text(xi, yi, name, fontsize=8, ha="center", va="bottom")
 
     ax.set_xlabel("评委")
-    ax.set_ylabel("总分 ")
-    ax.set_title(f"{student}：各评委总分的分布")
+    ax.set_ylabel("差值")
+    ax.set_title(f"{student}：各评委分值与中位数差值的分布")
     ax.set_xticks(x)
     ax.set_xticklabels(range(1, len(diffs) + 1))
 
