@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 
 history_df = pd.DataFrame(
         columns=[
-            "评审时间", "评审人", "候选人",
+            "评审时间", "评审人", "学生",
             "专业基础知识", "逻辑思维能力", "科研潜力", "沟通与表达能力", "综合素质",
             "总分"
         ]
@@ -35,7 +35,7 @@ root_df = pd.DataFrame(
 )
 root_df = pd.concat([
     root_df,
-    pd.DataFrame([{"id": "R001", "name": "key", "password": "123456"}])
+    pd.DataFrame([{"id": "R001", "name": "管理员", "password": "123456"}])
 ], ignore_index=True)
 
 judger_df = pd.DataFrame(

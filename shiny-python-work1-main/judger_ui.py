@@ -97,7 +97,7 @@ def judger_ui():
                 ui.div(
                 ui.card(
                     ui.card_header("评委界面"),
-                    ui.output_ui("judge_panel"),   # 这里还是你原来的 root_panel 动态内容
+                    ui.output_ui("judge_panel"),  
                     class_="mt-3"
                 ),
                 class_="p-3"

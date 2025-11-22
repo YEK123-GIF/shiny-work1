@@ -31,6 +31,7 @@ def server(input, output, session):
 
     dims_version = reactive.Value(0)  # 用于强制刷新维度相关UI
     students_version = reactive.Value(0)  # 用于强制刷新学生相关UI
+    history_version = reactive.Value(0)  # 用于强制刷新历史记录相关UI
 
     @output
     @render.text
@@ -108,7 +109,7 @@ def server(input, output, session):
             total_score = sum(scores.values())
         
             score_data = {
-                "候选人": student_name,
+                "学生": student_name,
                 "评审人": judger_name,
                 "评审时间": current_time,
                 "总分": total_score,
@@ -123,7 +124,7 @@ def server(input, output, session):
                 conn.execute(
                     text("""
                     DELETE FROM history
-                    WHERE 候选人 = :student_name
+                    WHERE 学生 = :student_name
                       AND 评审人 = :judger_name
                         """),
                     {"student_name": student_name, "judger_name": judger_name}
@@ -136,6 +137,8 @@ def server(input, output, session):
                 index=False,    
                 chunksize=1000
             )
+
+            history_version.set(history_version() + 1)  # 触发相关 UI 刷新
 
             ui.notification_show("提交成功", type="message")
         except:
@@ -222,14 +225,17 @@ def server(input, output, session):
     @output
     @render.data_frame
     def score_table():
-        df = pd.read_sql(f"SELECT 候选人, 专业基础知识, 逻辑思维能力, 科研潜力, 沟通与表达能力, 综合素质, 总分 FROM history WHERE 评审人='{current_user()}'", engine)
+
+        _ = history_version()  # 让这个 effect 对 history_version 有依赖
+
+        df = pd.read_sql(f"SELECT 学生, 专业基础知识, 逻辑思维能力, 科研潜力, 沟通与表达能力, 综合素质, 总分 FROM history WHERE 评审人='{current_user()}'", engine)
         return df
     
     @output
     @render.data_frame
     def score_table_for_root():
         student = input.plot_student()
-        df = pd.read_sql(f"SELECT 评审人, 候选人, 专业基础知识, 逻辑思维能力, 科研潜力, 沟通与表达能力, 综合素质, 总分 FROM history WHERE 候选人='{student}'", engine)
+        df = pd.read_sql(f"SELECT 评审人, 学生, 专业基础知识, 逻辑思维能力, 科研潜力, 沟通与表达能力, 综合素质, 总分 FROM history WHERE 学生='{student}'", engine)
         return df
     
 
@@ -241,7 +247,7 @@ def server(input, output, session):
     @render.download(filename="scores.csv")
     def download_csv():
         # 读取数据库里的评分记录
-        df = pd.read_sql(f"SELECT 候选人, 专业基础知识, 逻辑思维能力, 科研潜力, 沟通与表达能力, 综合素质, 总分 FROM history WHERE 评审人='{current_user()}'", engine)
+        df = pd.read_sql(f"SELECT 学生, 专业基础知识, 逻辑思维能力, 科研潜力, 沟通与表达能力, 综合素质, 总分 FROM history WHERE 评审人='{current_user()}'", engine)
 
         # 返回文本（str），Shiny 会作为文件内容
         csv_data = df.to_csv(index=False, encoding="utf-8-sig")
@@ -250,7 +256,7 @@ def server(input, output, session):
     @render.download(filename="scores.csv")
     def download_csv_root():
         student = input.plot_student()
-        df = pd.read_sql(f"SELECT 评审人, 候选人, 专业基础知识, 逻辑思维能力, 科研潜力, 沟通与表达能力, 综合素质, 总分 FROM history WHERE 候选人='{student}'", engine)
+        df = pd.read_sql(f"SELECT 评审人, 学生, 专业基础知识, 逻辑思维能力, 科研潜力, 沟通与表达能力, 综合素质, 总分 FROM history WHERE 学生='{student}'", engine)
 
         # 返回文本（str），Shiny 会作为文件内容
         csv_data = df.to_csv(index=False, encoding="utf-8-sig")
@@ -479,9 +485,9 @@ def server(input, output, session):
         if page != "show":
             return
 
-        df = pd.read_sql("SELECT DISTINCT 候选人 FROM history", engine)
+        df = pd.read_sql("SELECT DISTINCT 学生 FROM history", engine)
 
-        students = df["候选人"].tolist() if not df.empty else []
+        students = df["学生"].tolist() if not df.empty else []
 
         ui.update_select(
             "plot_student",
@@ -500,7 +506,7 @@ def server(input, output, session):
 
         # 只取该学生的评分记录
         df = pd.read_sql(
-            "SELECT 候选人, 评审人, 总分 FROM history WHERE 候选人 = %s",
+            "SELECT 学生, 评审人, 总分 FROM history WHERE 学生 = %s",
             con=engine,
             params=(student,)   # 注意这里是元组，不是 [student]
         )
@@ -592,7 +598,7 @@ from io import BytesIO
 def make_score_diff_figure(student: str):
     # 与上面 score_diff_plot 中的逻辑一致，只是返回 fig
     df = pd.read_sql(
-            "SELECT 候选人, 评审人, 总分 FROM history WHERE 候选人 = %s",
+            "SELECT 学生, 评审人, 总分 FROM history WHERE 学生 = %s",
             con=engine,
             params=(student,)   # 注意这里是元组，不是 [student]
         )

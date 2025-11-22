@@ -1,21 +1,18 @@
 import pandas as pd
 from sqlalchemy import create_engine
 
-"""用提供的实例来初始化数据库"""
+"""用提供的示例来初始化数据库"""
 
 engine = create_engine('mysql+pymysql://root:Lzc3219870@localhost:3306/work1?charset=utf8')
 
-history_df = pd.read_sql("SELECT * FROM history", engine)
-print(history_df)
+history_df = pd.read_csv("example/history.csv")
+students_df = pd.read_csv("example/students.csv")
+judger_df = pd.read_csv("example/judger.csv")
+DIMENSIONS_df = pd.read_csv("example/dimensions.csv")
+root_df = pd.read_csv("example/root.csv")
 
-students_df = pd.read_sql("SELECT * FROM students", engine)
-print(students_df)
-
-root_df = pd.read_sql("SELECT * FROM root", engine)
-print(root_df)
-
-dims_df = pd.read_sql("SELECT * FROM dimensions", engine)
-print(dims_df)
-
-judger_df = pd.read_sql("SELECT * FROM judger", engine)
-print(judger_df)
+history_df.to_sql(name="history", con=engine, if_exists='replace', index=False)
+students_df.to_sql(name="students", con=engine, if_exists='replace', index=False)
+judger_df.to_sql(name="judger", con=engine, if_exists='replace', index=False)
+DIMENSIONS_df.to_sql(name="dimensions", con=engine, if_exists='replace', index=False)
+root_df.to_sql(name="root", con=engine, if_exists='replace', index=False)
