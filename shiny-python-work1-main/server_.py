@@ -1,3 +1,4 @@
+from turtle import st
 from shiny import App, reactive, render, ui
 import pandas as pd
 from sqlalchemy import create_engine, text
@@ -17,7 +18,6 @@ DIMENSIONS = pd.read_sql_table('dimensions', engine)
 judger_df = pd.read_sql_table('judger', engine)
 root_df = pd.read_sql_table('root', engine)
 history_df = pd.read_sql_table('history', engine)
-grades_df = pd.read_sql_table('grades', engine)
 
 def server(input, output, session):
     logged_in = reactive.Value(False)
@@ -28,7 +28,9 @@ def server(input, output, session):
     dims_store = reactive.Value(DIMENSIONS.copy())
     judges_store = reactive.Value(judger_df.copy()) #让shiny自动追踪reactive值
     history_store = reactive.Value(history_df.copy())
-    grades_store = reactive.Value(grades_df.copy())
+
+    dims_version = reactive.Value(0)  # 用于强制刷新维度相关UI
+    students_version = reactive.Value(0)  # 用于强制刷新学生相关UI
 
     @output
     @render.text
@@ -159,6 +161,9 @@ def server(input, output, session):
     @output
     @render.ui
     def judge_panel():
+
+        _ = dims_version()  # 让这个 effect 对 dims_version 有依赖
+
         page = input.judge_page() or "blank"
 
         if page == "blank":
@@ -173,6 +178,9 @@ def server(input, output, session):
     @output
     @render.ui
     def page():
+
+        _ = students_version()  # 让这个 effect 对 students_version 有依赖
+
         if not logged_in():
             return login_ui
 
@@ -190,6 +198,9 @@ def server(input, output, session):
     @output
     @render.ui
     def student_card():
+
+        _ = students_version()
+
         sid = (input.student() or "").strip().split()[0]
         if not sid:
             return ui.div("未选择学生")
@@ -277,6 +288,8 @@ def server(input, output, session):
             return
 
         students.to_sql("students", engine, if_exists="replace", index=False)
+        students_version.set(students_version() + 1)  # 触发相关 UI 刷新
+
         ui.notification_show("✔ 学生名单上传成功！", type="message")
 
     @output
@@ -353,7 +366,7 @@ def server(input, output, session):
     @reactive.Effect
     @reactive.event(input.add_dim_btn)
     def _add_dim():
-        global DIMENSIONS
+        global DIMENSIONS #修改全局变量
         name = (input.new_dim_name() or "").strip()
         if not name:
             ui.notification_show("请先输入维度名称", type="warning")
@@ -373,6 +386,8 @@ def server(input, output, session):
         with engine.connect() as conn:
             conn.execute(text(f"ALTER TABLE history ADD COLUMN `{name}` VARCHAR(255) DEFAULT '0'"))
             conn.commit()
+        
+        dims_version.set(dims_version() + 1)  # 触发维度相关UI刷新
 
         ui.notification_show(f"已添加评分维度：{name}", type="message")
 
@@ -402,6 +417,8 @@ def server(input, output, session):
         with engine.connect() as conn:
             conn.execute(text(f"ALTER TABLE history DROP COLUMN `{name}`"))
             conn.commit()
+        
+        dims_version.set(dims_version() + 1)  # 触发维度相关UI刷新
 
         ui.notification_show(f"已删除评分维度：{name}", type="message")
 

@@ -1,4 +1,3 @@
-import re
 from shiny import App, reactive, render, ui
 import pandas as pd
 from sqlalchemy import create_engine
