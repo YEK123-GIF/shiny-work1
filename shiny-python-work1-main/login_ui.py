@@ -7,7 +7,6 @@ login_ui = ui.page_fillable(
 
             ui.tags.hr(),
 
-            # 登录身份选择
             ui.input_radio_buttons(
                 "login_role",
                 "登录身份",

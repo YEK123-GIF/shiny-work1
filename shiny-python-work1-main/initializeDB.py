@@ -1,5 +1,5 @@
 import pandas as pd
-from sqlalchemy import create_engine
+from config import engine
 
 """用于初始化数据库"""
 
@@ -55,8 +55,6 @@ grades_df = pd.DataFrame(
     "综合素质"
     ]
 )
-
-engine = create_engine('mysql+pymysql://root:Lzc3219870@localhost:3306/work1?charset=utf8')
 
 history_df.to_sql(name="history", con=engine, if_exists='replace', index=False)
 students_df.to_sql(name="students", con=engine, if_exists='replace', index=False)

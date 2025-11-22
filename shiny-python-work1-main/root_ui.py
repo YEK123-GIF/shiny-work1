@@ -36,12 +36,11 @@ def show_ui():
 
 def manage_ui():
     return ui.layout_columns(
-        # --------- 左：评分维度管理 ----------
         ui.card(
             ui.card_header("📐 评分维度管理"),
 
             ui.tags.p("当前系统中的评分维度：", class_="text-muted"),
-            ui.output_data_frame("dims_table"),   # 显示维度列表
+            ui.output_data_frame("dims_table"),  
 
             ui.tags.hr(),
 
@@ -59,12 +58,11 @@ def manage_ui():
             ui.output_ui("dim_delete_ui"),   # 这里动态渲染一个下拉框 + 删除按钮
         ),
 
-        # --------- 右：评委账号管理 ----------
         ui.card(
             ui.card_header("👤 评委账号管理"),
 
             ui.tags.p("当前已注册评委：", class_="text-muted"),
-            ui.output_data_frame("judges_table"),   # 显示评委账号表
+            ui.output_data_frame("judges_table"),  
 
             ui.tags.hr(),
 
@@ -88,7 +86,6 @@ def history_ui():
 
 root_ui = ui.page_fillable(
     ui.layout_sidebar(
-        # ---------- 左侧侧边栏 ----------
         ui.sidebar(
             ui.div(
                 "🛠 管理员操作界面",
@@ -127,14 +124,13 @@ root_ui = ui.page_fillable(
                 class_="btn btn-outline-danger w-100"
             ),
 
-            width=260  # 侧边栏宽度略窄一点
+            width=260  
         ),
 
-        # ---------- 右侧主内容区 ----------
         ui.div(
             ui.card(
                 ui.card_header("📊 管理员工作台"),
-                ui.output_ui("root_panel"),   # 这里还是你原来的 root_panel 动态内容
+                ui.output_ui("root_panel"),  
                 class_="mt-3"
             ),
             class_="p-3"

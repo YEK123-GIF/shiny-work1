@@ -1,7 +1,8 @@
 from turtle import st
 from shiny import App, reactive, render, ui
 import pandas as pd
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
+from config import engine
 from root_ui import *
 from judger_ui import *
 from login_ui import *
@@ -11,8 +12,6 @@ import matplotlib
 
 matplotlib.rcParams["font.sans-serif"] = ["SimHei", "Microsoft YaHei", "SimSun"]
 matplotlib.rcParams["axes.unicode_minus"] = False
-
-engine = create_engine('mysql+pymysql://root:Lzc3219870@localhost:3306/work1?charset=utf8')
 
 DIMENSIONS = pd.read_sql_table('dimensions', engine)
 judger_df = pd.read_sql_table('judger', engine)
@@ -84,25 +83,20 @@ def server(input, output, session):
     def do_submit():
 
         try:
-            current_time = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S") #时间
-            current_sid = (input.student() or "").strip().split()[0] #学生编号
-
+            current_time = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S") 
+            current_sid = (input.student() or "").strip().split()[0] 
             s = (input.student() or "").strip().split()[1]
-            student_name = s[1:-1] #学生姓名
-            judger_name = str(current_user()) #评委姓名
+            student_name = s[1:-1] 
+            judger_name = str(current_user()) 
 
-            # 1. 获取评分维度列表（处理 dims 为 None 的情况）
             dims = list(DIMENSIONS.iloc[0]) if (not DIMENSIONS.empty and DIMENSIONS.iloc[0] is not None) else []
     
-            # 2. 遍历维度读取分数，转为整数（存储为字典：维度名 -> 整数分数）
             scores = {}
             for dim in dims:
-                # 读取滑块值（默认返回 float，如 5.0、8.5）
                 score = input[f"score_{dim}"]()  
         
-                # 处理空值/异常值
                 if score is None:
-                    score = 0.0  # 空值默认0分
+                    score = 0.0 
         
                 scores[dim] = score
             
@@ -120,7 +114,6 @@ def server(input, output, session):
             
             from sqlalchemy import text
             with engine.begin() as conn:
-            # 删除同一评审人+候选人的旧记录
                 conn.execute(
                     text("""
                     DELETE FROM history
@@ -138,7 +131,7 @@ def server(input, output, session):
                 chunksize=1000
             )
 
-            history_version.set(history_version() + 1)  # 触发相关 UI 刷新
+            history_version.set(history_version() + 1)  # 触发相关UI刷新
 
             ui.notification_show("提交成功", type="message")
         except:
@@ -165,12 +158,12 @@ def server(input, output, session):
     @render.ui
     def judge_panel():
 
-        _ = dims_version()  # 让这个 effect 对 dims_version 有依赖
+        _ = dims_version()  # 让这个effect对dims_version有依赖
 
         page = input.judge_page() or "blank"
 
         if page == "blank":
-            return ui.card("欢迎登录")  # 默认空白显示
+            return ui.card("欢迎登录") 
 
         if page == "judge":
             return jud_ui()
@@ -182,7 +175,7 @@ def server(input, output, session):
     @render.ui
     def page():
 
-        _ = students_version()  # 让这个 effect 对 students_version 有依赖
+        _ = students_version() 
 
         if not logged_in():
             return login_ui
@@ -226,7 +219,7 @@ def server(input, output, session):
     @render.data_frame
     def score_table():
 
-        _ = history_version()  # 让这个 effect 对 history_version 有依赖
+        _ = history_version() 
 
         df = pd.read_sql(f"SELECT 学生, 专业基础知识, 逻辑思维能力, 科研潜力, 沟通与表达能力, 综合素质, 总分 FROM history WHERE 评审人='{current_user()}'", engine)
         return df
@@ -239,17 +232,10 @@ def server(input, output, session):
         return df
     
 
-    @output
-    @render.image
-    def judeger_show_image():
-        pass
-
     @render.download(filename="scores.csv")
     def download_csv():
-        # 读取数据库里的评分记录
         df = pd.read_sql(f"SELECT 学生, 专业基础知识, 逻辑思维能力, 科研潜力, 沟通与表达能力, 综合素质, 总分 FROM history WHERE 评审人='{current_user()}'", engine)
 
-        # 返回文本（str），Shiny 会作为文件内容
         csv_data = df.to_csv(index=False, encoding="utf-8-sig")
         yield csv_data
     
@@ -258,7 +244,6 @@ def server(input, output, session):
         student = input.plot_student()
         df = pd.read_sql(f"SELECT 评审人, 学生, 专业基础知识, 逻辑思维能力, 科研潜力, 沟通与表达能力, 综合素质, 总分 FROM history WHERE 学生='{student}'", engine)
 
-        # 返回文本（str），Shiny 会作为文件内容
         csv_data = df.to_csv(index=False, encoding="utf-8-sig")
         yield csv_data
 
@@ -303,26 +288,17 @@ def server(input, output, session):
     def history_table():
        return history_store()
 
-    # --------- 评分维度表格 ----------
     @output
     @render.data_frame
     def dims_table():
         dims = pd.DataFrame({"评分维度": list(dims_store().iloc[0])})
         return dims
 
-    # --------- 评委表格 ----------
     @output
     @render.data_frame
     def judges_table():
         return judges_store()
 
-    # --------- 评分表格 ----------
-    @output
-    @render.data_frame
-    def grades_table():
-        return grades_store()
-
-    # --------- 删除维度用的下拉框 ----------
     @output
     @render.ui
     def dim_delete_ui():
@@ -344,7 +320,6 @@ def server(input, output, session):
             )
         )
 
-    # --------- 删除评委用的下拉框 ----------
     @output
     @render.ui
     def judge_delete_ui():
@@ -352,7 +327,6 @@ def server(input, output, session):
         if df.empty:
             return ui.div("当前没有任何评委账号", class_="text-muted")
 
-        # 用用户名做选项
         choices = list(df["name"])
         return ui.layout_columns(
             ui.input_select(
@@ -368,11 +342,10 @@ def server(input, output, session):
             )
         )
 
-    # ------- 添加评分维度 -------
     @reactive.Effect
     @reactive.event(input.add_dim_btn)
     def _add_dim():
-        global DIMENSIONS #修改全局变量
+        global DIMENSIONS # 修改全局变量
         name = (input.new_dim_name() or "").strip()
         if not name:
             ui.notification_show("请先输入维度名称", type="warning")
@@ -400,7 +373,6 @@ def server(input, output, session):
         # 清空输入框
         ui.update_text("new_dim_name", value="")
 
-    # ------- 删除评分维度 -------
     @reactive.Effect
     @reactive.event(input.del_dim_btn)
     def _del_dim():
@@ -410,11 +382,9 @@ def server(input, output, session):
             ui.notification_show("请选择要删除的维度", type="warning")
             return
 
-        # 找到该列编号
         col_index = DIMENSIONS.iloc[0].tolist().index(name)
         col_name = DIMENSIONS.columns[col_index]
 
-        # 删除该列
         DIMENSIONS = DIMENSIONS.drop(columns=[col_name])
         DIMENSIONS.columns = list(range(DIMENSIONS.shape[1]))
         DIMENSIONS.to_sql(name="dimensions", con=engine, if_exists='replace', index=False)
@@ -428,7 +398,6 @@ def server(input, output, session):
 
         ui.notification_show(f"已删除评分维度：{name}", type="message")
 
-    # ------- 添加评委 -------
     @reactive.Effect
     @reactive.event(input.add_judge_btn)
     def _add_judge():
@@ -460,7 +429,6 @@ def server(input, output, session):
         ui.update_text("new_judge_user", value="")
         ui.update_text("new_judge_pwd", value="")
 
-    # ------- 删除评委 -------
     @reactive.Effect
     @reactive.event(input.del_judge_btn)
     def _del_judge():
@@ -478,10 +446,8 @@ def server(input, output, session):
     
     @reactive.Effect
     def _update_student_choices():
-        # 让 effect 对 root_page 有依赖，这样每次切换功能菜单都会重新执行
         page = input.root_page()
 
-        # 只有在“查看评分汇总分析”页面时才更新下拉框
         if page != "show":
             return
 
@@ -504,11 +470,10 @@ def server(input, output, session):
             ax.axis("off")
             return fig
 
-        # 只取该学生的评分记录
         df = pd.read_sql(
             "SELECT 学生, 评审人, 总分 FROM history WHERE 学生 = %s",
             con=engine,
-            params=(student,)   # 注意这里是元组，不是 [student]
+            params=(student,) 
         )
 
 
@@ -519,7 +484,6 @@ def server(input, output, session):
             return fig
         
         df["总分"] = pd.to_numeric(df["总分"], errors="coerce")
-        # 如果存在非法值被转成 NaN，可以顺手丢掉
         df = df.dropna(subset=["总分"])
         if df.empty:
             fig, ax = plt.subplots()
@@ -534,13 +498,11 @@ def server(input, output, session):
         diffs = df_sorted["差值"].values
         judges = df_sorted["评审人"].tolist()
 
-        # x 轴用排序后的序号（1,2,3,...）
         x = np.arange(1, len(diffs) + 1)
 
         fig, ax = plt.subplots(figsize=(6, 4))
         ax.scatter(x, diffs)
 
-        # 标注每个点对应的评委名字（可选）
         for xi, yi, name in zip(x, diffs, judges):
             ax.text(xi, yi, name, fontsize=8, ha="center", va="bottom")
 
@@ -560,7 +522,6 @@ def server(input, output, session):
     def download_pdf():
         student = input.plot_student()
         if not student:
-            # 没有选择学生时给个空 PDF
             fig, ax = plt.subplots()
             ax.text(0.5, 0.5, "暂无数据", ha="center", va="center")
             ax.axis("off")
@@ -571,7 +532,7 @@ def server(input, output, session):
         fig.savefig(buf, format="pdf", bbox_inches="tight")
         plt.close(fig)
         buf.seek(0)
-        # 用 yield 返回二进制内容
+        # 用yield返回二进制内容
         yield buf.getvalue()
     
     @render.download(filename=lambda: f"{input.plot_student() or 'score_diff'}.jpg")
@@ -595,12 +556,11 @@ def server(input, output, session):
 
 from io import BytesIO
 
-def make_score_diff_figure(student: str):
-    # 与上面 score_diff_plot 中的逻辑一致，只是返回 fig
+def make_score_diff_figure(student):
     df = pd.read_sql(
             "SELECT 学生, 评审人, 总分 FROM history WHERE 学生 = %s",
             con=engine,
-            params=(student,)   # 注意这里是元组，不是 [student]
+            params=(student,)   
         )
 
     fig, ax = plt.subplots(figsize=(6, 4))
@@ -610,7 +570,6 @@ def make_score_diff_figure(student: str):
         ax.axis("off")
         return fig
     df["总分"] = pd.to_numeric(df["总分"], errors="coerce")
-    # 如果存在非法值被转成 NaN，可以顺手丢掉
     df = df.dropna(subset=["总分"])
     if df.empty:
         fig, ax = plt.subplots()
