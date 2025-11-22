@@ -2,7 +2,6 @@ import re
 from shiny import App, reactive, render, ui
 import pandas as pd
 from sqlalchemy import create_engine
-from server_ import get_dims_store
 
 engine = create_engine('mysql+pymysql://root:Lzc3219870@localhost:3306/work1?charset=utf8')
 
