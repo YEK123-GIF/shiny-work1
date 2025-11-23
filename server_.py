@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
 
-matplotlib.rcParams["font.sans-serif"] = ["SimHei", "Microsoft YaHei", "SimSun"]
+matplotlib.rcParams["font.sans-serif"] = ["SimHei", "Microsoft YaHei", "SimSun", "PingFang SC", "Heiti TC", "Songti SC"]
 matplotlib.rcParams["axes.unicode_minus"] = False
 
 DIMENSIONS = pd.read_sql_table('dimensions', engine)
