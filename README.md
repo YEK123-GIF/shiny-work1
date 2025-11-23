@@ -66,9 +66,9 @@
 
 ## 项目展示
 
-![图片说明](./images/a.jpeg) 
-![图片说明](./images/b.jpeg) 
-![图片说明](./images/c.jpeg) 
-![图片说明](./images/d.jpeg) 
-![图片说明](./images/e.jpeg) 
-![图片说明](./images/f.jpeg)
+![图片说明](images/a.jpeg) 
+![图片说明](images/b.jpeg) 
+![图片说明](images/c.jpeg) 
+![图片说明](images/d.jpeg) 
+![图片说明](images/e.jpeg) 
+![图片说明](images/f.jpeg)
