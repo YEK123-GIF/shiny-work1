@@ -3,7 +3,7 @@ from shiny import App, reactive, render, ui
 login_ui = ui.page_fillable(
     ui.div(
         ui.card(
-            ui.div("🎓 专家评分系统", class_="text-center fs-3 fw-bold mb-3"),
+            ui.div("专家评分系统", class_="text-center fs-3 fw-bold mb-3"),
 
             ui.tags.hr(),
 
@@ -15,8 +15,8 @@ login_ui = ui.page_fillable(
                 inline=True
             ),
 
-            ui.input_text("login_user", "👤 用户名", placeholder="请输入用户名"),
-            ui.input_password("login_pass", "🔑 密码", placeholder="请输入密码"),
+            ui.input_text("login_user", "用户名", placeholder="请输入用户名"),
+            ui.input_password("login_pass", "密码", placeholder="请输入密码"),
 
             ui.input_action_button(
                 "login_btn",

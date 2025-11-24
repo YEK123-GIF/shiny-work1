@@ -68,7 +68,7 @@ def server(input, output, session):
         login_role_store.set(input.login_role())
 
         who = "评委" if role == "judge" else "管理员"
-        ui.notification_show(f"欢迎，{u}（{who}）！", type="message")
+        ui.notification_show(f"欢迎，{u}({who})", type="message")
 
     @reactive.Effect
     @reactive.event(input.logout_btn)
@@ -264,24 +264,24 @@ def server(input, output, session):
             try:
                  students = pd.read_csv(filepath)
             except Exception as e:
-                ui.notification_show(f"CSV 文件无法读取：{e}", type="error")
+                ui.notification_show(f"CSV 文件无法读取: {e}", type="error")
                 return
 
         elif filename.endswith(".xlsx"):
             try:
                 students = pd.read_excel(filepath)
             except Exception as e:
-                ui.notification_show(f"Excel 文件无法读取：{e}", type="error")
+                ui.notification_show(f"Excel 文件无法读取: {e}", type="error")
                 return
 
         else:
-            ui.notification_show("❌ 仅支持上传 CSV 或 Excel 文件！", type="error")
+            ui.notification_show("仅支持上传 CSV 或 Excel 文件", type="error")
             return
 
         students.to_sql("students", engine, if_exists="replace", index=False)
         students_version.set(students_version() + 1)  # 触发相关 UI 刷新
 
-        ui.notification_show("✔ 学生名单上传成功！", type="message")
+        ui.notification_show("学生名单上传成功", type="message")
 
     @output
     @render.data_frame
@@ -353,7 +353,7 @@ def server(input, output, session):
 
         dims = list(DIMENSIONS.iloc[0])
         if name in dims:
-            ui.notification_show("该维度已存在！", type="warning")
+            ui.notification_show("该维度已存在", type="warning")
             return
 
         dims.append(name)
@@ -368,7 +368,7 @@ def server(input, output, session):
         
         dims_version.set(dims_version() + 1)  # 触发维度相关UI刷新
 
-        ui.notification_show(f"已添加评分维度：{name}", type="message")
+        ui.notification_show(f"已添加评分维度: {name}", type="message")
 
         # 清空输入框
         ui.update_text("new_dim_name", value="")
@@ -396,7 +396,7 @@ def server(input, output, session):
         
         dims_version.set(dims_version() + 1)  # 触发维度相关UI刷新
 
-        ui.notification_show(f"已删除评分维度：{name}", type="message")
+        ui.notification_show(f"已删除评分维度: {name}", type="message")
 
     @reactive.Effect
     @reactive.event(input.add_judge_btn)
@@ -411,7 +411,7 @@ def server(input, output, session):
 
         df = judger_df
         if not df[df["name"] == user].empty:
-            ui.notification_show("该评委用户名已存在！", type="warning")
+            ui.notification_show("该评委用户名已存在", type="warning")
             return
 
         new_row = pd.DataFrame([{
@@ -424,7 +424,7 @@ def server(input, output, session):
         judger_df.to_sql(name="judger", con=engine, if_exists='replace', index=False)
         judges_store.set(judger_df.copy())
 
-        ui.notification_show(f"已添加评委：{user}", type="message")
+        ui.notification_show(f"已添加评委: {user}", type="message")
 
         ui.update_text("new_judge_user", value="")
         ui.update_text("new_judge_pwd", value="")
@@ -442,7 +442,7 @@ def server(input, output, session):
         judger_df.to_sql(name="judger", con=engine, if_exists='replace', index=False)
         judges_store.set(judger_df.copy())
 
-        ui.notification_show(f"已删除评委：{user}", type="message")
+        ui.notification_show(f"已删除评委: {user}", type="message")
     
     @reactive.Effect
     def _update_student_choices():

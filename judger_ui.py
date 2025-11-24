@@ -46,7 +46,7 @@ def res_ui():
 
 def judger_ui():
     students_df = pd.read_sql("SELECT * FROM students", engine)
-    student_choices = [f"{r['id']} （{r['name']})"for _, r in students_df.iterrows()]
+    student_choices = [f"{r['id']} （{r['name']}）"for _, r in students_df.iterrows()]
     judger_ui = ui.page_fluid(
         ui.layout_sidebar(
             ui.sidebar(
@@ -57,7 +57,7 @@ def judger_ui():
                     choices=student_choices,
                     multiple=False,
                     options={
-                        "placeholder": "输入姓名搜索…",
+                        "placeholder": "输入姓名搜索",
                         "maxItems": 1,
                         "create": False,  # 禁止用户自建选项
                     },
